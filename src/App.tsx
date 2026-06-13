@@ -416,7 +416,7 @@ export default function App() {
             <Lock className="h-10 w-10 text-cyan-400 animate-pulse" />
           </div>
 
-          <div className="space-y-1.5ClassName">
+          <div className="space-y-1.5">
             <h2 className="text-xl font-display font-bold text-brand-50">Confidential Vault locked</h2>
             <p className="text-xs text-brand-350 leading-relaxed font-mono">
               MindPath privacy locks active. Input your passcode to review personal diary collections.
