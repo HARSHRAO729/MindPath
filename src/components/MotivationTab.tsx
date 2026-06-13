@@ -8,7 +8,7 @@ import {
   Trophy, Flame, Award, Timer, Coffee, Bell, 
   Play, Pause, RotateCcw, Sparkles, AlertTriangle, 
   HelpCircle, CheckCircle, ArrowRight, ShieldCheck, 
-  BookOpen, Heart, Sunset
+  BookOpen, Heart, Sunset, Music, Volume2
 } from 'lucide-react';
 import { StudentProfile, JournalEntry, AchievementBadge } from '../types';
 
@@ -44,6 +44,150 @@ export const MotivationTab: React.FC<MotivationTabProps> = ({
       setToast(prev => prev?.message === message ? null : prev);
     }, 6000);
   };
+
+  // --- FATIGUE ANALYSIS PARSER ---
+  // Iterate the recent 3 entries, looking for symptoms of intense mental tiredness, burnout, sleep deficit, or heavy overwhelm.
+  interface FatigueSignal {
+    date: string;
+    triggerReason: string;
+    intensityText: string;
+    recommendedAction: string;
+    subjectContext: string;
+  }
+
+  const detectFatigueSignals = (): FatigueSignal[] => {
+    const signals: FatigueSignal[] = [];
+    // Key words
+    const fatigueKeywords = ['tired', 'fatigue', 'exhaust', 'burnout', 'sleep', 'heavy', 'unmanageable', 'collapse', 'stagnant', 'shatter'];
+    
+    entries.slice(0, 3).forEach((entry) => {
+      const contentLower = entry.content.toLowerCase();
+      let matchesKeyword = fatigueKeywords.some(kw => contentLower.includes(kw));
+      
+      // Also look at emotional intensity for stress or overwhelm from analysis meta
+      let hasHighStressOrOverwhelm = false;
+      let stressRating = 0;
+      if (entry.analysis?.emotions) {
+        const stressEmo = entry.analysis.emotions.find(e => ['stress', 'overwhelm', 'anxiety'].includes(e.name.toLowerCase()));
+        if (stressEmo && stressEmo.intensity >= 7) {
+          hasHighStressOrOverwhelm = true;
+          stressRating = stressEmo.intensity;
+        }
+      }
+
+      if (matchesKeyword || hasHighStressOrOverwhelm || entry.manualMood <= 4) {
+        // Extract specific subject
+        let foundSubject = entry.examContext || 'Physics / Maths';
+        if (contentLower.includes('physic')) foundSubject = 'Physics';
+        else if (contentLower.includes('chem')) foundSubject = 'Chemistry';
+        else if (contentLower.includes('math') || contentLower.includes('calculus')) foundSubject = 'Mathematics';
+        else if (contentLower.includes('bio') || contentLower.includes('botany') || contentLower.includes('biology')) foundSubject = 'Biology';
+        else if (contentLower.includes('history') || contentLower.includes('upsc')) foundSubject = 'Civil Studies';
+
+        // Choose recommended alternative subject based on current context
+        let alternateSub = 'General Inorganic Chemistry (Factual Review)';
+        if (foundSubject.toLowerCase().includes('physic') || foundSubject.toLowerCase().includes('math')) {
+          alternateSub = 'Inorganic Chemistry reactions or Botany nomenclature (requires low analytical muscle)';
+        } else if (foundSubject.toLowerCase().includes('chem') || foundSubject.toLowerCase().includes('bio')) {
+          alternateSub = 'Previous-year analytical mock physics questions (or a restorative break walk)';
+        }
+
+        signals.push({
+          date: new Date(entry.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+          triggerReason: matchesKeyword ? "Direct fatigue keywords detected in mental diary" : `High cortisol index (${stressRating}/10) logged`,
+          intensityText: entry.manualMood <= 4 ? "Critical Stagnation Range" : "High Cognitive Deficit",
+          recommendedAction: `Switch from active problem sets of ${foundSubject} immediately over to ${alternateSub}.`,
+          subjectContext: foundSubject
+        });
+      }
+    });
+
+    return signals;
+  };
+
+  const activeFatigueSignals = detectFatigueSignals();
+
+  // --- PERSONALIZED YOUTUBE MUSIC RE-MATCH SYSTEM ---
+  const musicLibrary = [
+    {
+      id: 'WPni755-Krg',
+      title: 'Alpha Waves for Super Focus',
+      desc: 'Pure 40Hz alpha wave resonances block stressful classroom background static and escalate your math logic speed.',
+      category: 'focus' as const,
+      duration: '3 hours',
+      suitabilityReason: 'Matched for analytical exam environments to accelerate logical calculation capacity.',
+      tags: ['Alpha Waves', 'Binaural Focus']
+    },
+    {
+      id: '89fR84bW09I',
+      title: 'Bilateral Stimulation Therapy',
+      desc: 'Gentle somatic left-to-right auditory pacing designed to relieve study panic spikes, exam tension, and stress logs.',
+      category: 'anxiety' as const,
+      duration: '1 hour',
+      suitabilityReason: 'Somatic pacing immediately balances elevated stress index levels and rapid breathing cycles.',
+      tags: ['Bilateral Sound', 'Somatic Decompress']
+    },
+    {
+      id: 'T68L_T8UvB4',
+      title: 'Indian Bamboo Flute (Bhairavi)',
+      desc: 'Restorative woodwind classical flute soundscapes designed to establish physical grounding and soothe cognitive burnout.',
+      category: 'meditative' as const,
+      duration: '4 hours',
+      suitabilityReason: 'Ideal for taking healthy breaks and post-exam unwinding to reset your focus reserves.',
+      tags: ['Bamboo Flute', 'Grounding Classical']
+    },
+    {
+      id: '5qap5aO4i9A',
+      title: 'Cozy Instrumental Study Lofi',
+      desc: 'Steadily looping lofi chillbeats that keep the prefrontal cortex mildly focused without draining critical mental fuel.',
+      category: 'lofi' as const,
+      duration: '24/7 Live Stream',
+      suitabilityReason: 'Matched to prevent rote memorization burnout during inorganic revision cards.',
+      tags: ['Lofi Chill', 'Instrumental Revision']
+    }
+  ];
+
+  type MusicCategory = 'all' | 'focus' | 'anxiety' | 'meditative' | 'lofi';
+  const [selectedMusicCategory, setSelectedMusicCategory] = useState<MusicCategory>('all');
+  
+  // Calculate recommended dynamically
+  const getPersonalizedMusicRX = () => {
+    const latestEntry = entries[0];
+    const latestMood = latestEntry ? latestEntry.manualMood : 6;
+    const isHighStress = latestEntry?.analysis?.emotions?.some(e => ['stress', 'overwhelm', 'anxiety'].includes(e.name.toLowerCase()) && e.intensity >= 7);
+    const hasFatigue = activeFatigueSignals.length > 0;
+    
+    let recommendationId = '5qap5aO4i9A'; // Default Lofi
+    let recommendationReason = "Steady instrumental background waves matching your revision timetable.";
+    
+    if (latestMood <= 4 || isHighStress) {
+      recommendationId = '89fR84bW09I';
+      recommendationReason = `High stress level detected (Mood: ${latestMood}/10). Auditory Bilateral Stimulation is recommended to balance flight-or-fight pacing.`;
+    } else if (hasFatigue) {
+      recommendationId = 'T68L_T8UvB4';
+      recommendationReason = "High cognitive deficit detected. Restorative classical bamboo flute soundscapes matched for visual grounding.";
+    } else if (profile.currentExam === 'JEE' || (latestEntry?.content?.toLowerCase().includes('physic') || latestEntry?.content?.toLowerCase().includes('math'))) {
+      recommendationId = 'WPni755-Krg';
+      recommendationReason = `IIT-JEE/Physics focus matching: 40Hz alpha waves facilitate spatial orientation and mathematical calculations.`;
+    } else if (profile.currentExam === 'NEET' || (latestEntry?.content?.toLowerCase().includes('bio') || latestEntry?.content?.toLowerCase().includes('chem'))) {
+      recommendationId = '5qap5aO4i9A';
+      recommendationReason = `NEET/Biology memorization matching: steady non-vocals chill beats sustain vocabulary storage.`;
+    }
+    
+    return {
+      track: musicLibrary.find(t => t.id === recommendationId) || musicLibrary[0],
+      reason: recommendationReason
+    };
+  };
+
+  const currentRecommend = getPersonalizedMusicRX();
+  const [selectedTrackId, setSelectedTrackId] = useState<string>(currentRecommend.track.id);
+  const [pointsClaimed, setPointsClaimed] = useState<boolean>(false);
+
+  // Sync state if recommendation matches
+  useEffect(() => {
+    setSelectedTrackId(currentRecommend.track.id);
+  }, [entries, profile.currentExam]);
 
   // Timer operation states
   const [timerSecondsLeft, setTimerSecondsLeft] = useState(sessionMinutes * 60);
@@ -147,67 +291,7 @@ export const MotivationTab: React.FC<MotivationTabProps> = ({
   };
 
 
-  // --- FATIGUE ANALYSIS PARSER ---
-  // Iterate the recent 3 entries, looking for symptoms of intense mental tiredness, burnout, sleep deficit, or heavy overwhelm.
-  interface FatigueSignal {
-    date: string;
-    triggerReason: string;
-    intensityText: string;
-    recommendedAction: string;
-    subjectContext: string;
-  }
 
-  const detectFatigueSignals = (): FatigueSignal[] => {
-    const signals: FatigueSignal[] = [];
-    // Key words
-    const fatigueKeywords = ['tired', 'fatigue', 'exhaust', 'burnout', 'sleep', 'heavy', 'unmanageable', 'collapse', 'stagnant', 'shatter'];
-    
-    entries.slice(0, 3).forEach((entry) => {
-      const contentLower = entry.content.toLowerCase();
-      let matchesKeyword = fatigueKeywords.some(kw => contentLower.includes(kw));
-      
-      // Also look at emotional intensity for stress or overwhelm from analysis meta
-      let hasHighStressOrOverwhelm = false;
-      let stressRating = 0;
-      if (entry.analysis?.emotions) {
-        const stressEmo = entry.analysis.emotions.find(e => ['stress', 'overwhelm', 'anxiety'].includes(e.name.toLowerCase()));
-        if (stressEmo && stressEmo.intensity >= 7) {
-          hasHighStressOrOverwhelm = true;
-          stressRating = stressEmo.intensity;
-        }
-      }
-
-      if (matchesKeyword || hasHighStressOrOverwhelm || entry.manualMood <= 4) {
-        // Extract specific subject
-        let foundSubject = entry.examContext || 'Physics / Maths';
-        if (contentLower.includes('physic')) foundSubject = 'Physics';
-        else if (contentLower.includes('chem')) foundSubject = 'Chemistry';
-        else if (contentLower.includes('math') || contentLower.includes('calculus')) foundSubject = 'Mathematics';
-        else if (contentLower.includes('bio') || contentLower.includes('botany') || contentLower.includes('biology')) foundSubject = 'Biology';
-        else if (contentLower.includes('history') || contentLower.includes('upsc')) foundSubject = 'Civil Studies';
-
-        // Choose recommended alternative subject based on current context
-        let alternateSub = 'General Inorganic Chemistry (Factual Review)';
-        if (foundSubject.toLowerCase().includes('physic') || foundSubject.toLowerCase().includes('math')) {
-          alternateSub = 'Inorganic Chemistry reactions or Botany nomenclature (requires low analytical muscle)';
-        } else if (foundSubject.toLowerCase().includes('chem') || foundSubject.toLowerCase().includes('bio')) {
-          alternateSub = 'Previous-year analytical mock physics questions (or a restorative break walk)';
-        }
-
-        signals.push({
-          date: new Date(entry.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
-          triggerReason: matchesKeyword ? "Direct fatigue keywords detected in mental diary" : `High cortisol index (${stressRating}/10) logged`,
-          intensityText: entry.manualMood <= 4 ? "Critical Stagnation Range" : "High Cognitive Deficit",
-          recommendedAction: `Switch from active problem sets of ${foundSubject} immediately over to ${alternateSub}.`,
-          subjectContext: foundSubject
-        });
-      }
-    });
-
-    return signals;
-  };
-
-  const activeFatigueSignals = detectFatigueSignals();
 
 
   // --- GAMIFICATION ELEMENTS ---
@@ -579,6 +663,201 @@ export const MotivationTab: React.FC<MotivationTabProps> = ({
                 </p>
               </div>
             )}
+          </div>
+
+          {/* EYE-SAFE RESTORATIVE YOUTUBE MUSIC LABS */}
+          <div id="restorative-music-labs-card" className="bg-brand-900 border border-brand-800 rounded-2xl p-6 shadow-xl space-y-6 animate-in slide-in-from-bottom-4 duration-300">
+            <div className="flex items-center justify-between border-b border-brand-800 pb-4">
+              <div className="flex items-center space-x-3 text-left">
+                <div className="p-2 bg-brand-850 border border-brand-800 rounded-xl text-brand-404">
+                  <Music className="h-5 w-5 text-indigo-404" />
+                </div>
+                <div>
+                  <h3 className="text-md font-display font-semibold text-brand-50">Eye-Safe Restorative Music Labs</h3>
+                  <p className="text-xs text-brand-350">Acoustical study and wellness formulas personalized for your academic pacing</p>
+                </div>
+              </div>
+              <span className="text-[10px] bg-indigo-950/80 text-indigo-350 border border-indigo-850 px-2.5 py-1 rounded-full font-mono font-semibold uppercase tracking-wider">
+                Music Only
+              </span>
+            </div>
+
+            {/* Personalized Diagnostics Card Nudge */}
+            <div className="bg-brand-950/80 p-4 rounded-xl border border-brand-800 text-left flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="space-y-1.5 flex-1 select-none">
+                <div className="flex items-center space-x-2">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-brand-300">
+                    AI Match Formulation
+                  </span>
+                </div>
+                <p className="text-xs text-brand-100 font-medium leading-relaxed">
+                  {currentRecommend.reason}
+                </p>
+                <div className="text-[10px] text-brand-400 font-mono flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span>Target Exam: <strong className="text-brand-300 font-bold">{profile.currentExam || 'General Prep'}</strong></span>
+                  <span>•</span>
+                  <span>Latest Mood Index: <strong className="text-brand-300 font-bold">{entries[0]?.manualMood ? `${entries[0].manualMood}/10` : 'None logged'}</strong></span>
+                </div>
+              </div>
+
+              <div className="shrink-0">
+                <button
+                  onClick={() => {
+                    setSelectedTrackId(currentRecommend.track.id);
+                    triggerToast(`Loaded Dynamic Match: ${currentRecommend.track.title}`, "info");
+                  }}
+                  className="bg-indigo-650 hover:bg-indigo-555 text-white font-mono font-bold text-[10px] tracking-wider px-3.5 py-2.5 rounded-xl border border-indigo-555/20 shadow-lg cursor-pointer transition-colors flex items-center space-x-1.5"
+                >
+                  <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+                  <span>LOAD HIGH MATCH</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Core split layout: video iframe player left, category + presets right */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              
+              {/* YouTube Responsive Frame Player */}
+              <div className="lg:col-span-3 space-y-3 text-left">
+                <div id="youtube-embed-player-frame" className="aspect-video w-full rounded-xl overflow-hidden border-2 border-brand-800 bg-black relative shadow-inner">
+                  <iframe
+                    className="w-full h-full"
+                    src={`https://www.youtube.com/embed/${selectedTrackId}?autoplay=0&controls=1&rel=0`}
+                    title="MindPath Audio Laboratory"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    referrerPolicy="no-referrer"
+                  ></iframe>
+                </div>
+                <div className="flex items-center justify-between px-1 select-none">
+                  <div className="flex items-center space-x-1.5">
+                    <Volume2 className="h-3.5 w-3.5 text-brand-400" />
+                    <span className="text-[11px] font-mono text-brand-350">
+                      Instrumental Only • Play at comfortable low volume
+                    </span>
+                  </div>
+                  <a
+                    href={`https://www.youtube.com/watch?v=${selectedTrackId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold transition-colors font-mono hover:underline flex items-center space-x-0.5"
+                  >
+                    <span>External View</span>
+                    <span>↗</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Presets and selector right */}
+              <div className="lg:col-span-2 flex flex-col space-y-3 text-left">
+                <div className="flex items-center justify-between pb-1 select-none border-b border-brand-850">
+                  <span className="text-[11.5px] font-mono font-bold uppercase tracking-wider text-brand-300">
+                    Acoustic Preset List
+                  </span>
+                  
+                  {/* Category switcher */}
+                  <div className="flex space-x-1">
+                    {(['all', 'focus', 'anxiety'] as const).map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedMusicCategory(cat)}
+                        className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md border capitalize cursor-pointer transition-all ${
+                          selectedMusicCategory === cat
+                            ? 'bg-brand-500 text-white border-brand-600'
+                            : 'bg-brand-950 text-brand-350 border-brand-850 hover:text-brand-100'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Playlist Area */}
+                <div className="flex-1 overflow-y-auto max-h-[190px] pr-1 space-y-2 custom-thin-scrollbar">
+                  {musicLibrary
+                    .filter(t => selectedMusicCategory === 'all' || t.category === selectedMusicCategory)
+                    .map((track) => {
+                      const isPlaying = selectedTrackId === track.id;
+                      const isRecommended = currentRecommend.track.id === track.id;
+                      return (
+                        <button
+                          key={track.id}
+                          onClick={() => {
+                            setSelectedTrackId(track.id);
+                            triggerToast(`Switched back to: ${track.title}`, "info");
+                          }}
+                          className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col space-y-1.5 ${
+                            isPlaying
+                              ? 'bg-brand-800 border-brand-500 shadow-md'
+                              : 'bg-brand-950 border-brand-850 hover:border-brand-700 hover:bg-brand-900/60'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[12px] font-bold ${isPlaying ? 'text-brand-50 font-semibold' : 'text-brand-100 font-medium'}`}>
+                              {track.title}
+                            </span>
+                            {isRecommended && (
+                              <span className="text-[8px] bg-indigo-950 text-indigo-300 border border-indigo-850 font-mono font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0 ml-1.5">
+                                AI Recommend
+                              </span>
+                            )}
+                          </div>
+                          
+                          <p className="text-[10.5px] text-brand-350 leading-relaxed font-sans line-clamp-2">
+                            {track.desc}
+                          </p>
+
+                          <div className="flex items-center justify-between text-[9px] font-mono text-brand-400 select-none">
+                            <span className="capitalize text-indigo-405 font-bold">
+                              #{track.category}
+                            </span>
+                            <span>{track.duration}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Restitution Activity XP Booster Claim Item */}
+            <div className="pt-4 border-t border-brand-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-left select-none">
+              <div className="flex-1 space-y-1">
+                <h4 className="text-[11px] font-mono font-bold text-brand-300 uppercase tracking-wider flex items-center space-x-1.5">
+                  <ShieldCheck className="h-4 w-4 text-emerald-405" />
+                  <span>Stamina Recovery Routine Reward</span>
+                </h4>
+                <p className="text-[10px] text-brand-450 leading-relaxed">
+                  Listening to non-lyrical music prevents working memory depletion. Play any track, take a 10m restorative break, and maintain study safety!
+                </p>
+              </div>
+
+              <div className="shrink-0 w-full sm:w-auto">
+                <button
+                  disabled={pointsClaimed}
+                  onClick={() => {
+                    const nextPoints = (profile.totalPoints || 120) + 25;
+                    updateProfile({
+                      ...profile,
+                      totalPoints: nextPoints
+                    });
+                    setPointsClaimed(true);
+                    triggerToast("🎉 Sound Restitution Bonus! +25 XP credited to stamina level.", "success");
+                  }}
+                  className={`w-full sm:w-auto font-mono font-bold text-xs px-5 py-3 rounded-xl border transition-all cursor-pointer shadow-lg tracking-wider ${
+                    pointsClaimed
+                      ? 'bg-emerald-950 text-emerald-400 border-emerald-850 cursor-not-allowed'
+                      : 'bg-brand-600 hover:bg-brand-555 text-white border-brand-555/20 hover:border-brand-500'
+                  }`}
+                >
+                  {pointsClaimed ? '✓ REWARD ACTIVE (+25 XP CLAIMED)' : '🎁 CLAIM STAMINA BONUS (+25 XP)'}
+                </button>
+              </div>
+            </div>
+
           </div>
 
         </div>
