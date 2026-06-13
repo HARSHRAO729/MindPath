@@ -12,7 +12,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const MAX_TEXT_LENGTH = 4000;
 const ALLOWED_EXAMS = new Set(['JEE', 'NEET', 'UPSC', 'CAT', 'GATE', 'CUET', 'OTHER']);
 
