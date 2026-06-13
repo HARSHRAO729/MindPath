@@ -13,9 +13,73 @@ dotenv.config();
 
 const app = express();
 const PORT = 3000;
+const MAX_TEXT_LENGTH = 4000;
+const ALLOWED_EXAMS = new Set(['JEE', 'NEET', 'UPSC', 'CAT', 'GATE', 'CUET', 'OTHER']);
+
+type RateLimitBucket = {
+  count: number;
+  resetAt: number;
+};
+
+const requestBuckets = new Map<string, RateLimitBucket>();
+
+const normalizeTextInput = (value: unknown): string => {
+  if (typeof value !== 'string') return '';
+  return value.trim().slice(0, MAX_TEXT_LENGTH);
+};
+
+const normalizeExamContext = (value: unknown): string => {
+  return typeof value === 'string' && ALLOWED_EXAMS.has(value) ? value : 'OTHER';
+};
+
+const normalizeMood = (value: unknown): number => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 5;
+  return Math.max(1, Math.min(10, Math.round(parsed)));
+};
+
+const detectCrisisText = (value: string): boolean => {
+  const crisisSignals = [
+    'suicide', 'kill myself', 'die', 'self-harm', 'cut myself', 'ending my life',
+    'end it all', 'no point living', 'want to die', 'better off dead', 'atmanhatya',
+    'mar jana', 'sucide', 'hate my life'
+  ];
+  const normalized = value.toLowerCase();
+  return crisisSignals.some(sig => normalized.includes(sig));
+};
 
 // Set up server-side safety limits and parsers
-app.use(express.json({ limit: '1mb' }));
+app.disable('x-powered-by');
+app.use(express.json({ limit: '64kb' }));
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; base-uri 'self'; frame-ancestors 'none'"
+  );
+  next();
+});
+
+app.use('/api', (req, res, next) => {
+  const key = req.ip || req.socket.remoteAddress || 'local';
+  const now = Date.now();
+  const bucket = requestBuckets.get(key);
+
+  if (!bucket || bucket.resetAt < now) {
+    requestBuckets.set(key, { count: 1, resetAt: now + 60_000 });
+    return next();
+  }
+
+  if (bucket.count >= 30) {
+    return res.status(429).json({ error: 'Too many requests. Please pause briefly before retrying.' });
+  }
+
+  bucket.count += 1;
+  next();
+});
 
 // Initialise Gemini with AI Studio signature
 const apiKey = process.env.GEMINI_API_KEY;
@@ -31,9 +95,11 @@ const ai = new GoogleGenAI({
 // Endpoint: AI-driven Journal Sentiment Analysis & Emotional Tagging (US-01, US-02, US-03, F1, F2, F5)
 app.post('/api/analyze', async (req, res) => {
   try {
-    const { content, examContext, manualMood } = req.body;
+    const content = normalizeTextInput(req.body?.content);
+    const examContext = normalizeExamContext(req.body?.examContext);
+    const manualMood = normalizeMood(req.body?.manualMood);
 
-    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+    if (!content) {
       return res.status(400).json({ error: 'Journal content is required for analysis.' });
     }
 
@@ -43,9 +109,9 @@ app.post('/api/analyze', async (req, res) => {
       return res.json({
         moodSliderValue: manualMood || 5,
         emotions: [
-          { name: 'Stress', intensity: 6 },
-          { name: 'Anxiety', intensity: 5 },
-          { name: 'Calm', intensity: 4 },
+          { name: 'Stress', intensity: manualMood <= 4 ? 7 : 5 },
+          { name: 'Anxiety', intensity: manualMood <= 4 ? 7 : 4 },
+          { name: 'Calm', intensity: manualMood >= 7 ? 6 : 4 },
           { name: 'Determination', intensity: 7 }
         ],
         triggers: [examContext ? `${examContext} preparation` : 'General Studies', 'Syllabus workload'],
@@ -59,12 +125,7 @@ app.post('/api/analyze', async (req, res) => {
     }
 
     // 1. In-depth rule-based crisis pre-checks for high-risk flags (Safety Directive)
-    const crisisSignals = [
-      'suicide', 'kill myself', 'die', 'self-harm', 'cut myself', 'ending my life', 
-      'end it all', 'no point living', 'want to die', 'better off dead', 'atmanhatya', 
-      'mar jana', 'sucide', 'hate my life'
-    ];
-    const textHasCrisis = crisisSignals.some(sig => content.toLowerCase().includes(sig));
+    const textHasCrisis = detectCrisisText(content);
 
     // 2. Query Gemini 3.5 Flash for complete Structured Sentiment Analysis using schema
     const prompt = `Analyze this journal entry written by an Indian student preparing for the "${examContext}" competitive entrance exam:
@@ -163,10 +224,20 @@ Analyze the emotional states (8 dimensions: Stress, Anxiety, Hopelessness, Confi
 // Endpoint: Empathetic AI Wellness Conversational Coach (US-04, US-02, F3, F5)
 app.post('/api/chat', async (req, res) => {
   try {
-    const { messages, examContext } = req.body;
+    const messages = Array.isArray(req.body?.messages) ? req.body.messages.slice(-12) : [];
+    const examContext = normalizeExamContext(req.body?.examContext);
 
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    if (messages.length === 0) {
       return res.status(400).json({ error: 'Chat message history is required.' });
+    }
+
+    const safeMessages = messages
+      .filter((m: any) => (m.role === 'user' || m.role === 'model') && typeof m.content === 'string')
+      .map((m: any) => ({ role: m.role, content: normalizeTextInput(m.content) }))
+      .filter((m: any) => m.content.length > 0);
+
+    if (safeMessages.length === 0) {
+      return res.status(400).json({ error: 'A valid chat message is required.' });
     }
 
     if (!apiKey) {
@@ -178,9 +249,8 @@ app.post('/api/chat', async (req, res) => {
     }
 
     // Safety checks for crisis words in chat
-    const crisisSignals = ['suicide', 'kill myself', 'die', 'self-harm', 'cut myself', 'ending my life', 'end it all', 'want to die', 'atmanhatya'];
-    const lastMessage = messages[messages.length - 1]?.content || "";
-    const hasCrisis = crisisSignals.some(sig => lastMessage.toLowerCase().includes(sig));
+    const lastMessage = safeMessages[safeMessages.length - 1]?.content || "";
+    const hasCrisis = detectCrisisText(lastMessage);
 
     if (hasCrisis) {
       return res.json({
@@ -190,7 +260,7 @@ app.post('/api/chat', async (req, res) => {
     }
 
     // Format chat messages appropriately for Gemini API
-    const formattedContents = messages.map((m: any) => ({
+    const formattedContents = safeMessages.map((m: any) => ({
       role: m.role === 'user' ? 'user' : 'model',
       parts: [{ text: m.content }]
     }));

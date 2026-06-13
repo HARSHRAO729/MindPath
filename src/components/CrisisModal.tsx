@@ -116,6 +116,9 @@ export const CrisisModal: React.FC<CrisisModalProps> = ({
       <div 
         id="crisis-modal-container"
         className="bg-brand-900 border border-red-800 rounded-2xl max-w-3xl w-full mx-auto shadow-2xl overflow-hidden animate-in fade-in duration-200"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="crisis-modal-title"
       >
         
         {/* Modal Header */}
@@ -125,13 +128,14 @@ export const CrisisModal: React.FC<CrisisModalProps> = ({
               <ShieldAlert className="h-6 w-6 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-xl font-display font-bold text-rose-800">Safety & Grounding Kit (SOS)</h2>
+              <h2 id="crisis-modal-title" className="text-xl font-display font-bold text-rose-800">Safety & Grounding Kit (SOS)</h2>
               <p className="text-xs text-rose-600">Empathetic relief, grounding mechanisms, and professional helpline networks</p>
             </div>
           </div>
           <button 
             onClick={onClose}
             className="p-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-200 cursor-pointer"
+            aria-label="Close safety and grounding kit"
           >
             <X className="h-5 w-5" />
           </button>
@@ -202,6 +206,7 @@ export const CrisisModal: React.FC<CrisisModalProps> = ({
                   <form onSubmit={handleAddInput} className="flex space-x-2">
                     <input
                       type="text"
+                      aria-label={STEPS_CONFIG[groundingStep - 1].heading}
                       value={currentInput}
                       onChange={(e) => setCurrentInput(e.target.value)}
                       placeholder={STEPS_CONFIG[groundingStep - 1].placeholder}
@@ -211,6 +216,7 @@ export const CrisisModal: React.FC<CrisisModalProps> = ({
                     <button
                       type="submit"
                       className="bg-brand-600 hover:bg-brand-500 text-white p-2 rounded-lg cursor-pointer transition-all"
+                      aria-label="Add grounding exercise item"
                     >
                       <Send className="h-3.5 w-3.5" />
                     </button>
@@ -242,8 +248,9 @@ export const CrisisModal: React.FC<CrisisModalProps> = ({
               <form onSubmit={handleSaveContact} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-mono text-brand-400 uppercase mb-1">Ally Name</label>
+                    <label htmlFor="trusted-contact-name" className="block text-[10px] font-mono text-brand-400 uppercase mb-1">Ally Name</label>
                     <input
+                      id="trusted-contact-name"
                       type="text"
                       required
                       value={contactName}
@@ -253,8 +260,9 @@ export const CrisisModal: React.FC<CrisisModalProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-mono text-brand-400 uppercase mb-1">Relationship</label>
+                    <label htmlFor="trusted-contact-relation" className="block text-[10px] font-mono text-brand-400 uppercase mb-1">Relationship</label>
                     <input
+                      id="trusted-contact-relation"
                       type="text"
                       required
                       value={contactRelation}
@@ -265,8 +273,9 @@ export const CrisisModal: React.FC<CrisisModalProps> = ({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-mono text-brand-400 uppercase mb-1">Phone Number / Email</label>
+                  <label htmlFor="trusted-contact-phone" className="block text-[10px] font-mono text-brand-400 uppercase mb-1">Phone Number / Email</label>
                   <input
+                    id="trusted-contact-phone"
                     type="text"
                     required
                     value={contactPhone}

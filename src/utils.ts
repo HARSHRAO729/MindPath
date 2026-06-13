@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { JournalEntry, StudentProfile } from './types';
+import { JournalEntry } from './types';
 
 // Simple privacy masker for client-side storage to protect from local exposure (US-03)
 export const encryptContent = (text: string, enabled: boolean): string => {
@@ -54,21 +54,23 @@ export const calculateResilienceScore = (
 export const calculateStreak = (entries: JournalEntry[]): number => {
   if (entries.length === 0) return 0;
 
+  const startOfLocalDay = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
   // Sort dates descending
   const sortedDates = entries
     .map(e => new Date(e.date).toDateString())
     .filter((value, index, self) => self.indexOf(value) === index) // Unique days
-    .map(d => new Date(d))
+    .map(d => startOfLocalDay(new Date(d)))
     .sort((a, b) => b.getTime() - a.getTime());
 
   if (sortedDates.length === 0) return 0;
 
-  const today = new Date();
-  const yesterday = new Date();
+  const today = startOfLocalDay(new Date());
+  const yesterday = startOfLocalDay(new Date());
   yesterday.setDate(today.getDate() - 1);
 
   const newestDate = sortedDates[0];
-  const diffDays = Math.floor(Math.abs(today.getTime() - newestDate.getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.round(Math.abs(today.getTime() - newestDate.getTime()) / (1000 * 60 * 60 * 24));
 
   // If the last entry is older than yesterday, streak has reset
   if (diffDays > 1 && newestDate.toDateString() !== today.toDateString()) {
@@ -80,7 +82,7 @@ export const calculateStreak = (entries: JournalEntry[]): number => {
 
   for (let i = 0; i < sortedDates.length; i++) {
     const current = sortedDates[i];
-    const daysDiff = Math.floor(Math.abs(expectedDate.getTime() - current.getTime()) / (1000 * 60 * 60 * 24));
+    const daysDiff = Math.round(Math.abs(expectedDate.getTime() - current.getTime()) / (1000 * 60 * 60 * 24));
     
     if (daysDiff === 0) {
       streak++;

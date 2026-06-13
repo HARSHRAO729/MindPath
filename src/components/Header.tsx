@@ -119,6 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={triggerEmergency}
               className="flex items-center space-x-1.5 bg-red-950/80 text-red-300 hover:bg-red-900 hover:text-red-100 border border-red-800 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-200"
               title="Activate immediate grounding / helpline panel"
+              aria-label="Open safety and grounding kit"
             >
               <AlertTriangle className="h-4 w-4 animate-pulse text-red-400" />
               <span className="hidden sm:inline">Grounding Kit (SOS)</span>
@@ -134,6 +135,8 @@ export const Header: React.FC<HeaderProps> = ({
                   : 'bg-brand-950/80 text-brand-300 border-brand-800 hover:bg-brand-800/80'
               }`}
               title={isStealth ? 'Disable Study Log mask (Back to Wellness view)' : 'Activate Stealth Mode (Mask App as Practice log)'}
+              aria-label={isStealth ? 'Disable stealth study log mode' : 'Enable stealth study log mode'}
+              aria-pressed={isStealth}
             >
               {isStealth ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
             </button>
@@ -144,6 +147,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={lockApp}
               className="p-2 rounded-lg bg-brand-950/80 hover:bg-brand-800/80 text-brand-300 border border-brand-800 cursor-pointer transition-all"
               title="Lock confidential vault"
+              aria-label="Lock confidential journal vault"
             >
               <Lock className="h-4 w-4" />
             </button>
@@ -167,6 +171,7 @@ export const Header: React.FC<HeaderProps> = ({
                 key={tab.id}
                 id={`tab-link-${tab.id}`}
                 onClick={() => setTab(tab.id)}
+                aria-current={currentTab === tab.id ? 'page' : undefined}
                 className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
                   currentTab === tab.id
                     ? isStealth 

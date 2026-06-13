@@ -28,6 +28,12 @@ describe('MindPath Utility Functions', () => {
       expect(decrypted).toBe(original);
     });
 
+    it('should preserve emoji and Indian-language text through local masking', () => {
+      const original = 'कल NEET mock hai 😟 but I am trying';
+      const encrypted = encryptContent(original, true);
+      expect(decryptContent(encrypted, true)).toBe(original);
+    });
+
     it('should gracefully return input text if decryption fails on non-base64', () => {
       const invalidEncrypted = '!!!not-base-64!!!';
       expect(decryptContent(invalidEncrypted, true)).toBe(invalidEncrypted);
@@ -123,6 +129,19 @@ describe('MindPath Utility Functions', () => {
       ];
 
       expect(calculateStreak(entries)).toBe(3);
+    });
+
+    it('should count only one streak day when multiple entries are logged today', () => {
+      const now = new Date();
+      const earlierToday = new Date(now);
+      earlierToday.setHours(1, 15, 0, 0);
+
+      const entries: JournalEntry[] = [
+        { id: '1', date: now.toISOString(), content: 'Today evening', manualMood: 5, examContext: 'CAT' },
+        { id: '2', date: earlierToday.toISOString(), content: 'Today morning', manualMood: 6, examContext: 'CAT' },
+      ];
+
+      expect(calculateStreak(entries)).toBe(1);
     });
 
     it('should return 0 if the latest entry is older than yesterday', () => {

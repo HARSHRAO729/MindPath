@@ -6,6 +6,14 @@ import {defineConfig} from 'vite';
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
+    build: {
+      target: 'esnext',
+    },
+    optimizeDeps: {
+      esbuildOptions: {
+        target: 'esnext',
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

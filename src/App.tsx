@@ -13,7 +13,7 @@ import { DashboardTab } from './components/DashboardTab';
 import { MotivationTab } from './components/MotivationTab';
 import { CrisisModal } from './components/CrisisModal';
 import { JournalEntry, StudentProfile, ChatMessage, ExamType, TrustedContact } from './types';
-import { EyeOff, Play, ShieldAlert, CheckCircle, Lock, Key, AlertCircle, Shield } from 'lucide-react';
+import { Lock, Shield } from 'lucide-react';
 import { calculateStreak, calculateResilienceScore, encryptContent, decryptContent } from './utils';
 
 // Core Seed Entries for immediate dashboard rendering on first load (US-06)
@@ -479,7 +479,7 @@ export default function App() {
         <div className="bg-brand-900 border-b border-brand-850 py-2 px-4 shadow-sm text-center">
           <div className="max-w-7xl mx-auto flex items-center justify-center space-x-2 text-[11px] font-mono text-brand-300">
             <Shield className="h-3.5 w-3.5 text-emerald-450" />
-            <span>Parent-lock available: Activate PIN lock anytime at Settings. Your journals are E2E locally masked.</span>
+            <span>Parent-lock available: Activate PIN lock anytime. Your journals are locally masked before storage.</span>
           </div>
         </div>
       )}

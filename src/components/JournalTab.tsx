@@ -111,6 +111,7 @@ export const JournalTab: React.FC<JournalTabProps> = ({
                 onClick={handleNextPrompt}
                 className="text-xs text-brand-300 hover:text-brand-100 font-mono flex items-center space-x-1 cursor-pointer"
                 title="Circulate another suggestion prompt"
+                aria-label="Show another guided journal prompt"
               >
                 <span>Cycle prompt ↻</span>
               </button>
@@ -159,6 +160,7 @@ export const JournalTab: React.FC<JournalTabProps> = ({
           <div>
             <textarea
               id="journal-input-textarea"
+              aria-label="Daily wellness journal entry"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Study logs, anxiety points, details about numerical performance or mock-test peer distress..."
@@ -242,6 +244,7 @@ export const JournalTab: React.FC<JournalTabProps> = ({
               <button
                 onClick={() => setSelectedEntry(null)}
                 className="text-xs text-brand-300 hover:text-brand-100 bg-brand-800 border border-brand-750 px-2 py-1 rounded"
+                aria-label="Close analyzed journal report"
               >
                 Close Report
               </button>
@@ -373,6 +376,15 @@ export const JournalTab: React.FC<JournalTabProps> = ({
                         : 'bg-brand-950/40 border-brand-800 hover:border-brand-700 hover:bg-brand-950'
                     }`}
                     onClick={() => setSelectedEntry(entry)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedEntry(entry);
+                      }
+                    }}
+                    aria-label={`Open journal analysis report for ${formatDate(entry.date)}`}
                   >
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-bold text-brand-100">{formatDate(entry.date)}</span>
@@ -393,6 +405,7 @@ export const JournalTab: React.FC<JournalTabProps> = ({
                           }}
                           className="p-1 rounded bg-red-950/20 hover:bg-red-950 text-red-405 hover:text-red-300 border border-red-900/20 cursor-pointer"
                           title="Purge Entry"
+                          aria-label={`Delete journal entry from ${formatDate(entry.date)}`}
                         >
                           <Trash2 className="h-3 w-3" />
                         </button>

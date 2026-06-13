@@ -4,8 +4,8 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, RefreshCw, SendHorizontal, AlertCircle, Play, Pause, Heart, MessageSquare } from 'lucide-react';
-import { ChatMessage, ChatRole, ExamType } from '../types';
+import { Sparkles, SendHorizontal, Play, Pause, Heart } from 'lucide-react';
+import { ChatMessage, ExamType } from '../types';
 
 interface CoachTabProps {
   messages: ChatMessage[];
@@ -189,6 +189,7 @@ export const CoachTab: React.FC<CoachTabProps> = ({
           <input
             id="chat-user-message-input"
             type="text"
+            aria-label="Message MindPath companion coach"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             disabled={isLoading}
@@ -199,6 +200,7 @@ export const CoachTab: React.FC<CoachTabProps> = ({
             type="submit"
             disabled={!inputText.trim() || isLoading}
             className="p-3 bg-brand-500 text-white rounded-xl hover:bg-brand-400 disabled:opacity-50 transition-colors cursor-pointer shrink-0 shadow-lg flex items-center justify-center"
+            aria-label="Send message to companion coach"
           >
             <SendHorizontal className="h-4 w-4" />
           </button>
@@ -260,6 +262,8 @@ export const CoachTab: React.FC<CoachTabProps> = ({
                   ? 'bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100'
                   : 'bg-teal-650 hover:bg-teal-555 text-teal-50 border border-teal-600 shadow-lg'
               }`}
+              aria-pressed={isBreathing}
+              aria-label={isBreathing ? 'Stop guided breathing practice' : 'Start guided breathing practice'}
             >
               {isBreathing ? (
                 <>
