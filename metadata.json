@@ -1,0 +1,6 @@
+{
+  "name": "MindPath",
+  "description": "AI Mental Wellness Tracker and Empathetic Companion for Competitive Exam Aspirants (NEET, JEE, UPSC, and more)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

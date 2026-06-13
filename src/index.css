@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  /* Soothing Soft Sage & Warm Tea Blossom Eye-Safe Palette */
+  --color-brand-50: #1b261f;    /* deep herbal forest (headings/readability) */
+  --color-brand-100: #29382e;   /* dark olive-slate (primary text) */
+  --color-brand-200: #3c4d41;   /* sage-charcoal (body content) */
+  --color-brand-300: #55665a;   /* muted herbal slate (labels) */
+  --color-brand-350: #718276;   /* soft minty gray (subtext) */
+  --color-brand-400: #2e6f40;   /* restorative leaf green (accent icons) */
+  --color-brand-403: #55665a;   /* muted olive-slate */
+  --color-brand-404: #2a633a;   /* tranquil shamrock (focus brand colors) */
+  --color-brand-405: #718276;   /* soft minty gray */
+  --color-brand-500: #2a633a;   /* tranquil shamrock (primary interactive buttons/tab selections) */
+  --color-brand-555: #1e492a;   /* deep rich chamomile green (actions hover state) */
+  --color-brand-600: #2a633a;   
+  --color-brand-610: #2a633a;   
+  --color-brand-700: #e2ede5;   /* pale moss cream (active highlights/tab backdrops) */
+  --color-brand-750: #cfded3;   /* light minty border */
+  --color-brand-850: #f1f6f2;   /* very soft, low-contrast tea blossom white (well highlights) */
+  --color-brand-800: #dae5dd;   /* soft sage border (card frames) */
+  --color-brand-805: #dae5dd;   
+  --color-brand-900: #f6fbf7;   /* delicate eye-comfort tea blossom off-white (sheets/card panels) */
+  --color-brand-950: #eff4f0;   /* extremely calming herbal linen sage background (app container wrap) */
+  
+  --color-indigo-650: #2a633a;
+  --color-indigo-750: #1e492a;
+  --color-teal-650: #1f5742;    /* deep quiet teal */
+  --color-teal-555: #133c2d;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-brand-950);
+    color: var(--color-brand-50);
+    font-family: var(--font-sans);
+  }
+}
+
+/* Custom visual pulse animation for guided breathing sequence */
+@keyframes breathingPulse {
+  0% { transform: scale(0.9); opacity: 0.45; }
+  50% { transform: scale(1.4); opacity: 0.9; }
+  100% { transform: scale(0.9); opacity: 0.45; }
+}
+
+.breathing-ring {
+  animation: breathingPulse 8s ease-in-out infinite;
+}
+
